@@ -191,6 +191,8 @@ a.btn{text-decoration:none;display:inline-block}
 .lockbox{width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
 .lockbox h1{font-size:1.4rem}
 .lockbox input[type=password]{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.qbar.idle{border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.qbar.idle strong{font-weight:400}
 @media (max-width:520px){.qbar{margin:8px 8px 0}}
 </style>
 </head>
@@ -796,9 +798,10 @@ function renderQueue(){
   if(fr)fr.textContent=meta.publishedAt?`Data from ${new Date(meta.publishedAt).toLocaleString([], {month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit"})} (${ago(meta.publishedAt)})`+(wait.length?` · ${wait.length} emailed change${wait.length===1?"":"s"} waiting for the sync`:""):"";
   const old=wait.some(a=>Date.now()-Date.parse(a.sentAt||a.at)>60*60000);$("#qresend").hidden=!old;
   const bar=$("#qbar");if(!bar)return;
-  if(!un.length){bar.hidden=true;return}
-  bar.hidden=false;
-  $("#qtext").textContent=`${un.length} change${un.length===1?"":"s"} not sent to the board yet`;
+  bar.hidden=false;bar.classList.toggle("idle",!un.length);
+  ["#qsend","#qcopy","#qshow"].forEach(s=>$(s).disabled=!un.length);
+  if(!un.length)$("#qlist").hidden=true;
+  $("#qtext").textContent=un.length?`${un.length} change${un.length===1?"":"s"} not sent to the board yet`:"No changes waiting. Your clicks collect here until you email them";
   $("#qlist").innerHTML=un.map(a=>`<li>${esc(describe(a))}</li>`).join("");
 }
 function b64url(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
