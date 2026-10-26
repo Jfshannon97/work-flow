@@ -200,14 +200,14 @@ a.btn{text-decoration:none;display:inline-block}
 <header class="top">
   <div class="top-inner">
     <div class="wfrow"><p class="wf">Work Flow</p><button class="lnk" id="lockOut" title="Forget the password on this computer">Lock</button></div>
-    <p class="fresh"><span id="fresh"></span> <button class="lnk" id="qresend" hidden title="Use this if an update email was never sent">Resend waiting changes</button></p>
+    <p class="fresh"><span id="fresh"></span></p>
     <div class="switch" role="tablist" aria-label="Board"><button class="sw" data-board="bd" role="tab">BD Board</button><button class="sw" data-board="meetings" role="tab">Meetings</button><button class="sw" data-board="deals" role="tab">Deal Board</button><button class="sw" data-board="tasks" role="tab">Tasks</button></div>
     <div class="srch"><input id="q" type="search" placeholder="Search companies, people, addresses" autocomplete="off" aria-label="Search the board" aria-controls="qs"><ul id="qs" class="qs" role="listbox" hidden></ul></div>
     <p class="sub" id="sub">Loading cards</p>
     <nav class="tabs" role="tablist" id="tabs"></nav>
   </div>
 </header>
-<div class="qbar" id="qbar" hidden><div class="qrow"><strong id="qtext"></strong><span class="btns"><button class="btn primary" id="qsend">Email updates to the board</button><button class="btn" id="qcopy">Copy instead</button><button class="btn" id="qshow">Show</button></span></div><ul class="lines" id="qlist" hidden></ul></div>
+<div class="qbar" id="qbar" hidden><div class="qrow"><strong id="qtext"></strong><span class="btns"><button class="btn primary" id="qsend">Email updates to the board</button><button class="btn" id="qresend" hidden title="Use this if the update email was deleted or never sent">Email again</button><button class="btn" id="qcopy">Copy instead</button><button class="btn" id="qshow">Show</button></span></div><ul class="lines" id="qlist" hidden></ul></div>
 <main id="main"><div class="msg">Loading cards</div></main>
 <div class="lock" id="lock" hidden><form class="lockbox" id="lockForm"><h1>Work Flow</h1><p class="sub-row">Enter the board password.</p><input id="pw" type="password" autocomplete="current-password" aria-label="Password"><label class="sub-row"><input type="checkbox" id="remember"> Remember on this computer</label><button class="btn primary" id="lockBtn">Unlock</button><p class="sub-row" id="lockMsg" role="status"></p><p class="sub-row" style="font-size:.85rem">Waiting changes stay in this browser until you email them.</p></form></div>
 <div class="sr" aria-live="polite"></div>
@@ -796,13 +796,16 @@ function renderQueue(){
   const un=queue.filter(a=>!a.sent),wait=queue.filter(a=>a.sent);
   const fr=$("#fresh");
   if(fr)fr.textContent=meta.publishedAt?`Data from ${new Date(meta.publishedAt).toLocaleString([], {month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit"})} (${ago(meta.publishedAt)})`+(wait.length?` · ${wait.length} emailed change${wait.length===1?"":"s"} waiting for the sync`:""):"";
-  const old=wait.some(a=>Date.now()-Date.parse(a.sentAt||a.at)>60*60000);$("#qresend").hidden=!old;
   const bar=$("#qbar");if(!bar)return;
   bar.hidden=false;bar.classList.toggle("idle",!un.length);
-  ["#qsend","#qcopy","#qshow"].forEach(s=>$(s).disabled=!un.length);
-  if(!un.length)$("#qlist").hidden=true;
-  $("#qtext").textContent=un.length?`${un.length} change${un.length===1?"":"s"} not sent to the board yet`:"No changes waiting. Your clicks collect here until you email them";
-  $("#qlist").innerHTML=un.map(a=>`<li>${esc(describe(a))}</li>`).join("");
+  $("#qsend").hidden=!un.length&&!!wait.length;$("#qresend").hidden=!wait.length||!!un.length;
+  ["#qsend","#qcopy"].forEach(s=>$(s).disabled=!un.length);$("#qshow").disabled=!un.length&&!wait.length;
+  const shown=un.length?un:wait;
+  if(!shown.length)$("#qlist").hidden=true;
+  $("#qtext").textContent=un.length?`${un.length} change${un.length===1?"":"s"} not emailed yet`
+    :wait.length?`${wait.length} change${wait.length===1?"":"s"} emailed, waiting for the board to pick ${wait.length===1?"it":"them"} up. Deleted the email? Click Email again`
+    :"No changes waiting. Your clicks collect here until you email them";
+  $("#qlist").innerHTML=shown.map(a=>`<li>${esc(describe(a))}</li>`).join("");
 }
 function b64url(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
 function packs(items){
@@ -834,7 +837,7 @@ function sendQueue(copyOnly){
 $("#qsend").addEventListener("click",()=>sendQueue(false));
 $("#qcopy").addEventListener("click",()=>sendQueue(true));
 $("#qshow").addEventListener("click",()=>{const l=$("#qlist");l.hidden=!l.hidden;$("#qshow").textContent=l.hidden?"Show":"Hide"});
-$("#qresend").addEventListener("click",()=>{queue.forEach(a=>{if(a.sent)a.sent=false});saveQ();renderQueue();toast("Waiting changes moved back to unsent")});
+$("#qresend").addEventListener("click",()=>{queue.forEach(a=>{if(a.sent)a.sent=false});saveQ();sendQueue(false)});
 window.addEventListener("beforeunload",e=>{if(queue.some(a=>!a.sent)){e.preventDefault();e.returnValue=""}});
 setInterval(refresh,5*60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
