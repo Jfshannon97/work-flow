@@ -815,7 +815,7 @@ function packs(items){
 function mailFor(group,i,n){
   const acts=group.map(({aid,col,id,op,data,at})=>({aid,col,id,op,data,at}));
   const names=[...new Set(group.map(nameOf))];
-  const subj=`WF board update${n>1?` ${i+1} of ${n}`:""}: ${names.slice(0,3).join(", ")}${names.length>3?` +${names.length-3}`:""}`;
+  const subj=`WF Updates${n>1?` ${i+1} of ${n}`:""}: ${names.slice(0,3).join(", ")}${names.length>3?` +${names.length-3}`:""}`;
   const body=`Board changes from the Work Flow website. Send this email as is.\n\n${group.map(a=>"- "+describe(a)).join("\n")}\n\nDo not edit below this line.\n${MARK}:${b64url(JSON.stringify({v:1,actions:acts}))}:${MARK}`;
   return {subj,body,href:`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(ME)}&subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`};
 }
