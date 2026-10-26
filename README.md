@@ -10,12 +10,9 @@ No Claude sign in needed.
 - "Email updates to the board" opens one Outlook email to John with the changes. John hits Send.
 - The sync task on John's Mac reads those emails, applies them to the board database, and republishes. Then the bar clears.
 
-## Sync task (John's Mac)
-Scheduled Claude task "Work Flow website sync". Each run:
-1. Reads new "WF board update" emails from John to John (Outlook)
-2. Exports the board database to `~/.wf-board/x`
-3. `node tools/apply.mjs` plans the writes from the emails; Claude sends them to the board database; `--commit` marks them done
-4. `tools/publish.sh` encrypts the export and pushes it here
+## Sync (two parts)
+1. Scheduled Claude task "Work Flow website sync" (hourly, runs in Claude's Linux sandbox): reads "WF Updates" emails, applies the clicks to the board database (`tools/apply.py`), exports the board to `~/.wf-board/x`, and writes `x/.ready`. Steps: `tools/sync-task.md`
+2. Mac launch agent `com.wfboard.publish` (every 10 minutes, no Claude): when `x/.ready` is new, encrypts with the Keychain password and pushes (`tools/mac-publish.sh` calls `tools/publish.sh`). Install with `tools/install-mac-publish.sh`. Log: `~/.wf-board/state/publish.log`
 
 Private state lives in `~/.wf-board/state` (never in this repo). The password lives in the macOS Keychain item `wf-board` (`tools/set-password.sh`).
 
